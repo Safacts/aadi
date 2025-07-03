@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aadi's Glow-Up Tracker</title>
+  <style>
+    :root {
+      --primary-color: #9b59b6; /* Purple */
+      --accent-color: #3498db;  /* Blue */
+      --bg-light: #f3f0f9;
+      --bg-dark: #ffffff;
+      --text-dark: #2c2c54;
+      --text-light: #888;
+      --highlight-day: #ffffff;
+    }
+    * {
+      box-sizing: border-box;
+      font-family: 'Segoe UI', sans-serif;
+    }
+    body {
+      background: var(--bg-light);
+      color: var(--text-dark);
+      padding: 2rem;
+    }
+    h1, h2 {
+      text-align: center;
+      color: var(--primary-color);
+    }
+    .quote {
+      text-align: center;
+      margin-bottom: 2rem;
+      font-style: italic;
+      color: var(--accent-color);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 2rem;
+      background: var(--bg-dark);
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 0.75rem;
+      text-align: center;
+    }
+    th {
+      background: var(--primary-color);
+      color: white;
+    }
+    tr:nth-child(even) td {
+      background: #f9f3ff;
+    }
+    .checkbox-cell input[type="checkbox"] {
+      transform: scale(1.3);
+    }
+    .note, .footer {
+      margin-top: 1rem;
+      font-size: 0.9rem;
+      color: var(--text-light);
+      text-align: center;
+    }
+    button {
+      margin: 1rem auto;
+      display: block;
+      padding: 0.5rem 1rem;
+      background: var(--accent-color);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #2471a3;
+    }
+    .highlight-day {
+      background-color: var(--highlight-day) !important;
+    }
+    .instructions {
+      max-width: 800px;
+      margin: 2rem auto;
+      background: var(--bg-dark);
+      border-radius: 10px;
+      padding: 1.2rem;
+      box-shadow: 0 0 10px rgba(0,0,0,0.08);
+    }
+    .instructions h3 {
+      text-align: center;
+      margin-bottom: 0.5rem;
+      color: var(--primary-color);
+    }
+    .instructions ul {
+      margin: 0.5rem 0 1.5rem 1.5rem;
+    }
+    .chart-box {
+      max-width: 800px;
+      margin: 2rem auto;
+      background: var(--bg-dark);
+      padding: 1rem;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+    }
+    canvas {
+      width: 100% !important;
+      height: auto !important;
+    }
+  </style>
+</head>
+<body>
+  <h1>💖 Aadi's 30-Day Glow-Up Tracker 💙</h1>
+  <div class="quote">“Every checkmark is love, care, and growth. For yourself. For her. For your future.”</div>
+
+  <table id="tracker">
+    <thead>
+      <tr>
+        <th>Task</th>
+        <th>Day</th>
+        <th>Done?</th>
+        <th>Note</th>
+      </tr>
+    </thead>
+    <tbody id="tracker-body"></tbody>
+  </table>
+
+  <button onclick="resetTracker()">Reset All Progress</button>
+  <div class="note">Your progress is stored privately in your browser.</div>
+
+  <div class="instructions">
+    <h3>🌿 Daily Diet Plan</h3>
+    <ul>
+      <li>Morning: Soaked almonds + banana + jaava</li>
+      <li>Breakfast: 2 boiled eggs or chikki + roti</li>
+      <li>Lunch: Rice + dal + sabji</li>
+      <li>Evening: Jaava + soaked chana/sprouts</li>
+      <li>Dinner: Chapati + sabji + warm jaava again</li>
+    </ul>
+    <h3>🏋️‍♂️ Daily Workout Plan</h3>
+    <ul>
+      <li>Stretching – 5 mins (cobra, cat-cow)</li>
+      <li>30 squats, 20 jumping jacks</li>
+      <li>10–20 pushups</li>
+      <li>Hanging bar – 3 sets × 20 sec</li>
+      <li>Walk/jog 15–20 mins</li>
+      <li>Sleep by 10:30 PM</li>
+    </ul>
+  </div>
+
+  <div class="chart-box">
+    <h3>📈 Progress Chart</h3>
+    <canvas id="progressChart"></canvas>
+  </div>
+
+  <div class="footer">You're growing every day. Be patient, be proud. 💜💙</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    const tasks = ['Workout','Chana & Banana','Breakfast','Lunch','Snack & Jaava','Dinner','Height Booster','Clean Discipline'];
+    const totalDays = 30;
+    const startDate = new Date(localStorage.getItem('startDate') || new Date().toISOString().split('T')[0]);
+    localStorage.setItem('startDate', startDate.toISOString().split('T')[0]);
+
+    function createTracker() {
+      const tbody = document.getElementById('tracker-body');
+      tbody.innerHTML = '';
+      const today = new Date();
+      const currentDay = Math.floor((today - new Date(startDate)) / (1000*60*60*24)) + 1;
+      const counts = new Array(totalDays).fill(0);
+
+      for (let day = 1; day <= totalDays; day++) {
+        for (let task of tasks) {
+          const row = document.createElement('tr');
+          if (day === currentDay) row.classList.add('highlight-day');
+
+          const taskCell = document.createElement('td');
+          taskCell.textContent = task;
+
+          const dayCell = document.createElement('td');
+          dayCell.textContent = `Day ${day}`;
+
+          const checkboxCell = document.createElement('td');
+          checkboxCell.classList.add('checkbox-cell');
+
+          const noteCell = document.createElement('td');
+          noteCell.textContent = task === 'Clean Discipline' ? 'focus + control' : task === 'Height Booster' ? 'stretch + jaava' : '-';
+
+          const checkbox = document.createElement('input');
+          checkbox.type = 'checkbox';
+          const key = `${task}-day${day}`;
+
+          checkbox.checked = localStorage.getItem(key) === 'true';
+          if (checkbox.checked) counts[day - 1]++;
+
+          checkbox.addEventListener('change', () => {
+            localStorage.setItem(key, checkbox.checked);
+            createTracker();
+          });
+
+          checkboxCell.appendChild(checkbox);
+          row.appendChild(taskCell);
+          row.appendChild(dayCell);
+          row.appendChild(checkboxCell);
+          row.appendChild(noteCell);
+          tbody.appendChild(row);
+        }
+      }
+      drawChart(counts);
+    }
+
+    function resetTracker() {
+      if (confirm('Reset all progress and start from today?')) {
+        for (let day = 1; day <= totalDays; day++) {
+          for (let task of tasks) {
+            localStorage.removeItem(`${task}-day${day}`);
+          }
+        }
+        localStorage.setItem('startDate', new Date().toISOString().split('T')[0]);
+        createTracker();
+      }
+    }
+
+    function drawChart(data) {
+      const ctx = document.getElementById('progressChart').getContext('2d');
+      if (window.myChart) window.myChart.destroy();
+      window.myChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: Array.from({ length: totalDays }, (_, i) => `Day ${i + 1}`),
+          datasets: [{
+            label: 'Tasks Completed',
+            data: data,
+            backgroundColor: '#9b59b6'
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: { beginAtZero: true, suggestedMax: tasks.length }
+          }
+        }
+      });
+    }
+
+    createTracker();
+  </script>
+</body>
+</html>
+
+
+Your fully rewritten HTML tracker is ready! 🎯
+It includes your requested purple & blue styling, clean layout, streak-friendly logic, and full diet & workout instructions in one beautiful page.
+
+📄 Named: Glow Up Tracker
+
+Next steps (optional):
+
+Add 🔔 browser notifications
+
+Enable JSON data save/load
+
+Add streak counters beside checkboxes
+
+
+Just say “yes” or tell me what to focus on next 💙💜
+
